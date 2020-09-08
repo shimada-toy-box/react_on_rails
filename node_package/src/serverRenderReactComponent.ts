@@ -31,6 +31,7 @@ See https://github.com/shakacode/react_on_rails#renderer-functions`);
       railsContext,
     });
 
+    debugger;
     if (isCreateReactElementResultNonReactComponent(reactElementOrRouterResult)) {
       // We let the client side handle any redirect
       // Set hasErrors in case we want to throw a Rails exception
@@ -56,7 +57,16 @@ ROUTER REDIRECT: ${name} to dom node with id: ${domNodeId}, redirect to ${redire
         htmlResult = (reactElementOrRouterResult as { renderedHtml: string }).renderedHtml;
       }
     } else {
-      htmlResult = ReactDOMServer.renderToString(reactElementOrRouterResult as ReactElement);
+      try {
+        htmlResult = ReactDOMServer.renderToString(reactElementOrRouterResult as ReactElement);
+      } catch (error) {
+        console.error(
+            `Invalid call to renderToString. Possibly you have a renderFunction, a function that already
+calls renderToString, that takes one parameter. You need to add an extra unused
+parameter to identify this function as a renderFunction and not a simple React 
+Function Component.`);
+        throw error;
+      }
     }
   } catch (e) {
     hasErrors = true;
