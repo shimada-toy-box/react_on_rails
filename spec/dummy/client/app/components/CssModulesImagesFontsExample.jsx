@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
 
-import styles from './CssModulesImagesFontsExample.scss';
+import styles from './CssModulesImagesFontsExample';
 
 export default (_props) => (
   <div>

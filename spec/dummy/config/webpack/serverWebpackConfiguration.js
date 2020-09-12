@@ -1,6 +1,6 @@
 const { config } = require('@rails/webpacker');
 const environment = require('./environment');
-const merge = require('webpack-merge');
+const { merge } = require('webpack-merge');
 const webpack = require('webpack');
 
 const clientConfigObject = environment.toWebpackConfig();
@@ -12,21 +12,13 @@ const configureServer = () => {
   // entry value will result in changing the client config!
   // Using webpack-merge into an empty object avoids this issue.
   const serverWebpackConfig = merge({}, clientConfigObject);
+  debugger
 
   // We just want the single server bundle entry
-  serverWebpackConfig.entry = './client/app/startup/serverRegistration.jsx';
-
-  // Custom output for the server-bundle that matches the config in
-  // config/initializers/react_on_rails.rb
-  serverWebpackConfig.output = {
-    filename: 'server-bundle.js',
-    globalObject: 'this',
-    // if using a node server renderer, uncomment the next line
-    // libraryTarget: 'commonjs2',
-    path: config.outputPath,
-    publicPath: config.publicPath,
-    // https://webpack.js.org/configuration/output/#outputglobalobject
-  };
+  const serverEntry = {
+    'server-bundle': environment.entry.get('server-bundle')
+  }
+  serverWebpackConfig.entry = serverEntry
 
   // No splitting of chunks for a server bundle
   serverWebpackConfig.optimization = {
@@ -34,10 +26,44 @@ const configureServer = () => {
   };
   serverWebpackConfig.plugins.unshift(new webpack.optimize.LimitChunkCountPlugin({ maxChunks: 1 }));
 
+  // Custom output for the server-bundle that matches the config in
+  // config/initializers/react_on_rails.rb
+  serverWebpackConfig.output = {
+    filename: 'server-bundle.js',
+    globalObject: 'this',
+    // If using the React on Rails Pro node server renderer, uncomment the next line
+    // libraryTarget: 'commonjs2',
+    path: config.outputPath,
+    publicPath: config.outputPath
+    // https://webpack.js.org/configuration/output/#outputglobalobject
+  };
+
   // Don't hash the server bundle b/c would conflict with the client manifest
+  // And no need for the MiniCssExtractPlugin
   serverWebpackConfig.plugins = serverWebpackConfig.plugins.filter(
-    (plugin) => plugin.constructor.name !== 'WebpackAssetsManifest',
-  );
+    (plugin) =>
+      plugin.constructor.name !== 'WebpackAssetsManifest' &&
+      plugin.constructor.name !== 'MiniCssExtractPlugin' &&
+      plugin.constructor.name !== 'ForkTsCheckerWebpackPlugin'
+  )
+
+  // Configure loader rules for SSR
+  // Remove the mini-css-extract-plugin from the style loaders because
+  // the client build will handle exporting CSS.
+  // replace file-loader with null-loader
+  serverWebpackConfig.module.rules.forEach((loader) => {
+    if (loader.use && loader.use.filter) {
+      loader.use = loader.use.filter(
+        (item) =>
+          !(typeof item === 'string' &&
+              (item.match(/mini-css-extract-plugin/) || item === 'style-loader'))
+      )
+    }
+  })
+
+
+
+
 
   // Critical due to https://github.com/rails/webpacker/pull/2644
   delete serverWebpackConfig.devServer;
@@ -47,8 +73,9 @@ const configureServer = () => {
   // The default of cheap-module-source-map is slow and provides poor info.
   serverWebpackConfig.devtool = 'eval';
 
-  // If we use 'web', then libraries like Emotion and loadable-components break with SSR
-  // if using a node server renderer, uncomment the next line
+  // If using the default 'web', then libraries like Emotion and loadable-components
+  // break with SSR. The fix is to use a node renderer and change the target.
+  // If using the React on Rails Pro node server renderer, uncomment the next line
   // serverWebpackConfig.target = 'node'
 
   return serverWebpackConfig;

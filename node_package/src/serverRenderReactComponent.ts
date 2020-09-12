@@ -31,7 +31,6 @@ See https://github.com/shakacode/react_on_rails#renderer-functions`);
       railsContext,
     });
 
-    debugger;
     if (isCreateReactElementResultNonReactComponent(reactElementOrRouterResult)) {
       // We let the client side handle any redirect
       // Set hasErrors in case we want to throw a Rails exception
@@ -42,6 +41,10 @@ See https://github.com/shakacode/react_on_rails#renderer-functions`);
           `React Router ERROR: ${JSON.stringify((reactElementOrRouterResult as {routeError: Error}).routeError)}`,
         );
       }
+
+      console.log("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ");
+      console.error("Fix the error handling here");
+      console.log("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ");
 
       if ((reactElementOrRouterResult as {redirectLocation: {pathname: string; search: string}}).redirectLocation) {
         if (trace) {
